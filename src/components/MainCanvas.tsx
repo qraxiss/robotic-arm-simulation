@@ -13,7 +13,7 @@ import { useRotation } from '../store/rotationStore';
 const MainCanvas: React.FC = () => {
     const canvasContainerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const { rotationValues, setBaseRotation, setUpperArmRotation, setMiddleArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition, setMiddleArmCount, setMiddleArmLength } = useRotation();
+    const { rotationValues, setBaseRotation, setUpperArmRotation, setAllMiddleArmRotations, setLowerArmRotation, setGripRotation, setPlatformPosition } = useRotation();
 
     // Store objects as refs to maintain them between renders
     const canvasObjectRef = useRef<CanvasObject | null>(null);
@@ -83,7 +83,7 @@ const MainCanvas: React.FC = () => {
                 // Calculate direction vector from origin to clicked point
                 const direction = new THREE.Vector3(intersectPoint.x, 0, intersectPoint.z);
                 direction.normalize();
-                
+
                 // Move platform further behind the clicked point (45 units back)
                 const offsetDistance = 45;
                 const platformX = intersectPoint.x - direction.x * offsetDistance;
@@ -94,16 +94,17 @@ const MainCanvas: React.FC = () => {
                 const angleToTarget = Math.atan2(intersectPoint.x - platformX, intersectPoint.z - platformZ);
                 setBaseRotation(angleToTarget * 180 / Math.PI);
 
-                // Set all arm joints to 35 degrees tilt towards the target
-                const tiltAngle = 35;
+                // Calculate tilt angle based on number of arms
+                // More arms = sharper angle (base 35 degrees + 5 degrees per middle arm)
+                const baseTiltAngle = 35;
+                const tiltAngle = baseTiltAngle + (rotationValues.middleArmCount * 5);
+
                 setUpperArmRotation(tiltAngle);
                 setLowerArmRotation(tiltAngle);
-                
-                // Set middle arms to the same tilt angle
-                for (let i = 0; i < rotationValues.middleArmCount; i++) {
-                    setMiddleArmRotation(i, tiltAngle);
-                }
-                
+
+                // Set all middle arms to the same tilt angle
+                setAllMiddleArmRotations(tiltAngle);
+
                 // Also tilt the grip
                 setGripRotation(tiltAngle);
             }
@@ -122,7 +123,7 @@ const MainCanvas: React.FC = () => {
 
         platform.add(robotBase);
         robotBase.addChild(upperArm);
-        
+
         // Connect middle arms chain
         if (middleArmsRef.current.length > 0) {
             upperArm.addChild(middleArmsRef.current[0]);
@@ -133,7 +134,7 @@ const MainCanvas: React.FC = () => {
         } else {
             upperArm.addChild(lowerArm);
         }
-        
+
         lowerArm.addChild(grip);
 
         canvasObjectRef.current = new CanvasObject(canvas);
@@ -162,7 +163,7 @@ const MainCanvas: React.FC = () => {
     useEffect(() => {
         const count = rotationValues.middleArmCount;
         const currentCount = middleArmsRef.current.length;
-        
+
         if (count !== currentCount) {
             // Remove all middle arms from scene
             middleArmsRef.current.forEach(arm => {
@@ -170,23 +171,23 @@ const MainCanvas: React.FC = () => {
                     arm.parent.remove(arm);
                 }
             });
-            
+
             // Create new middle arms
             const newMiddleArms: MiddleArm[] = [];
             for (let i = 0; i < count; i++) {
                 newMiddleArms.push(new MiddleArm(0xaaaaee, rotationValues.middleArmLength));
             }
             middleArmsRef.current = newMiddleArms;
-            
+
             // Reconnect the chain
             const upperArm = upperArmRef.current;
             const lowerArm = lowerArmRef.current;
-            
+
             // Remove lowerArm from its current parent
             if (lowerArm.parent) {
                 lowerArm.parent.remove(lowerArm);
             }
-            
+
             if (count > 0) {
                 upperArm.addChild(middleArmsRef.current[0]);
                 for (let i = 0; i < count - 1; i++) {
@@ -198,7 +199,7 @@ const MainCanvas: React.FC = () => {
             }
         }
     }, [rotationValues.middleArmCount]);
-    
+
     // Update middle arms rotations
     useEffect(() => {
         middleArmsRef.current.forEach((arm, index) => {

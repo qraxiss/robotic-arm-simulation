@@ -18,6 +18,7 @@ interface RotationContextType {
   setBaseRotation: (value: number) => void;
   setUpperArmRotation: (value: number) => void;
   setMiddleArmRotation: (index: number, value: number) => void;
+  setAllMiddleArmRotations: (value: number) => void;
   setLowerArmRotation: (value: number) => void;
   setGripRotation: (value: number) => void;
   setPlatformPosition: (x: number, z: number) => void;
@@ -56,6 +57,13 @@ export const RotationProvider: React.FC<{ children: ReactNode }> = ({ children }
     });
   };
 
+  const setAllMiddleArmRotations = (value: number) => {
+    setRotationValues(prev => {
+      const newRotations = new Array(prev.middleArmCount).fill(value);
+      return { ...prev, middleArmRotations: newRotations };
+    });
+  };
+
   const setMiddleArmCount = (count: number) => {
     setRotationValues(prev => {
       const newRotations = new Array(count).fill(0);
@@ -89,6 +97,7 @@ export const RotationProvider: React.FC<{ children: ReactNode }> = ({ children }
       setBaseRotation,
       setUpperArmRotation,
       setMiddleArmRotation,
+      setAllMiddleArmRotations,
       setLowerArmRotation,
       setGripRotation,
       setPlatformPosition,
