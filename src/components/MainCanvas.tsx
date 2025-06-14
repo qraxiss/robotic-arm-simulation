@@ -207,12 +207,18 @@ const MainCanvas: React.FC = () => {
 
                         // After platform movement starts, rotate the base independently
                         setTimeout(() => {
-                            const currentBaseRotation = rotationValuesRef.current.baseRotation;
-                            // Since platform doesn't rotate anymore, we can use the angle directly
-                            const worldAngle = angleToTarget * 180 / Math.PI;
-                            animateBaseRotation(currentBaseRotation, worldAngle, 600, () => {
-                                // After base rotation completes, bend the arms
-                                setTimeout(() => {
+                            // Wait for platform rotation to complete
+                            setTimeout(() => {
+                                const currentBaseRotation = rotationValuesRef.current.baseRotation;
+                                // Get the direction the platform moved
+                                const deltaX = platformX - platformRef.current.position.x;
+                                const deltaZ = platformZ - platformRef.current.position.z;
+                                const platformRotation = Math.atan2(deltaX, deltaZ);
+                                // Calculate base rotation relative to platform's new orientation
+                                const relativeAngle = (angleToTarget - platformRotation) * 180 / Math.PI;
+                                animateBaseRotation(currentBaseRotation, relativeAngle, 600, () => {
+                                    // After base rotation completes, bend the arms
+                                    setTimeout(() => {
                         // Calculate the target position relative to the platform
                         const targetX = intersectPoint.x - platformX;
                         const targetZ = intersectPoint.z - platformZ;
@@ -289,8 +295,9 @@ const MainCanvas: React.FC = () => {
 
                         // Animate from straight to bent position
                         animateArmRotations(straightValues, targetBendValues, 800);
-                                }, 200); // Small delay after base rotation
-                            });
+                                    }, 200); // Small delay after base rotation
+                                });
+                            }, 400); // Wait for platform rotation to complete
                         }, 300); // Start base rotation shortly after platform starts moving
                     }, 200); // Small delay after arms straighten
                 });
@@ -420,13 +427,13 @@ const MainCanvas: React.FC = () => {
         const currentX = platformRef.current.position.x;
         const currentZ = platformRef.current.position.z;
 
-        const animationDuration = 1000;
-        const startTime = Date.now();
-
         // Calculate total distance for wheel rotation
         const deltaX = targetX - currentX;
         const deltaZ = targetZ - currentZ;
         const totalDistance = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+
+        // Only animate if there's significant movement
+        if (totalDistance < 0.1) return;
 
         // Calculate the angle to face the movement direction
         const targetAngle = Math.atan2(deltaX, deltaZ);
@@ -437,30 +444,50 @@ const MainCanvas: React.FC = () => {
         if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
         if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
 
-        const animate = () => {
+        // First rotate the platform
+        const rotationDuration = 400;
+        const movementDuration = 1000;
+        const startTime = Date.now();
+
+        const animateRotation = () => {
             const elapsed = Date.now() - startTime;
-            const progress = Math.min(elapsed / animationDuration, 1);
+            const progress = Math.min(elapsed / rotationDuration, 1);
             const easeProgress = 1 - Math.pow(1 - progress, 3);
 
-            // Move platform
-            platformRef.current.position.x = currentX + (targetX - currentX) * easeProgress;
-            platformRef.current.position.z = currentZ + (targetZ - currentZ) * easeProgress;
-
-            // Don't rotate platform - keep it fixed
-            // This prevents the platform rotation from affecting the robot base
-
-            // Rotate wheels based on distance traveled
-            const distanceTraveled = totalDistance * easeProgress;
-            if (platformRef.current.rotateWheels) {
-                platformRef.current.rotateWheels(distanceTraveled * 0.05); // Small incremental rotation
-            }
+            // Rotate platform
+            platformRef.current.rotation.y = currentAngle + angleDiff * easeProgress;
 
             if (progress < 1) {
-                requestAnimationFrame(animate);
+                requestAnimationFrame(animateRotation);
+            } else {
+                // After rotation completes, start movement
+                const moveStartTime = Date.now();
+                
+                const animateMovement = () => {
+                    const elapsed = Date.now() - moveStartTime;
+                    const progress = Math.min(elapsed / movementDuration, 1);
+                    const easeProgress = 1 - Math.pow(1 - progress, 3);
+
+                    // Move platform
+                    platformRef.current.position.x = currentX + (targetX - currentX) * easeProgress;
+                    platformRef.current.position.z = currentZ + (targetZ - currentZ) * easeProgress;
+
+                    // Rotate wheels based on distance traveled
+                    const distanceTraveled = totalDistance * easeProgress;
+                    if (platformRef.current.rotateWheels) {
+                        platformRef.current.rotateWheels(distanceTraveled * 0.05); // Small incremental rotation
+                    }
+
+                    if (progress < 1) {
+                        requestAnimationFrame(animateMovement);
+                    }
+                };
+
+                animateMovement();
             }
         };
 
-        animate();
+        animateRotation();
     }, [rotationValues.platformX, rotationValues.platformZ]);
 
     return (
