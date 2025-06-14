@@ -14,6 +14,12 @@ const MainCanvas: React.FC = () => {
     const canvasContainerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { rotationValues, setBaseRotation, setUpperArmRotation, setAllMiddleArmRotations, setLowerArmRotation, setGripRotation, setPlatformPosition } = useRotation();
+    const rotationValuesRef = useRef(rotationValues);
+    
+    // Update ref when rotationValues changes
+    useEffect(() => {
+        rotationValuesRef.current = rotationValues;
+    }, [rotationValues]);
 
     // Store objects as refs to maintain them between renders
     const canvasObjectRef = useRef<CanvasObject | null>(null);
@@ -49,18 +55,19 @@ const MainCanvas: React.FC = () => {
         };
 
         const handleKeyDown = (event: KeyboardEvent) => {
+            const currentValues = rotationValuesRef.current;
             switch (event.key) {
                 case 'a':
-                    setUpperArmRotation(rotationValues.upperArmRotation + 1);
+                    setUpperArmRotation(currentValues.upperArmRotation + 1);
                     break;
                 case 'd':
-                    setUpperArmRotation(rotationValues.upperArmRotation - 1);
+                    setUpperArmRotation(currentValues.upperArmRotation - 1);
                     break;
                 case 's':
-                    setGripRotation(rotationValues.gripRotation + 1);
+                    setGripRotation(currentValues.gripRotation + 1);
                     break;
                 case 'w':
-                    setGripRotation(rotationValues.gripRotation - 1);
+                    setGripRotation(currentValues.gripRotation - 1);
                     break;
             }
         };
@@ -84,8 +91,10 @@ const MainCanvas: React.FC = () => {
                 const direction = new THREE.Vector3(intersectPoint.x, 0, intersectPoint.z);
                 direction.normalize();
 
-                // Move platform further behind the clicked point (45 units back)
-                const offsetDistance = 45;
+                // Move platform further behind the clicked point
+                // Distance based only on arm count
+                const middleArmCount = rotationValuesRef.current.middleArmCount;
+                const offsetDistance = 40 + (20 * middleArmCount);
                 const platformX = intersectPoint.x - direction.x * offsetDistance;
                 const platformZ = intersectPoint.z - direction.z * offsetDistance;
                 setPlatformPosition(platformX, platformZ);
@@ -94,19 +103,50 @@ const MainCanvas: React.FC = () => {
                 const angleToTarget = Math.atan2(intersectPoint.x - platformX, intersectPoint.z - platformZ);
                 setBaseRotation(angleToTarget * 180 / Math.PI);
 
-                // Calculate tilt angle based on number of arms
-                // More arms = sharper angle (base 35 degrees + 5 degrees per middle arm)
-                const baseTiltAngle = 35;
-                const tiltAngle = baseTiltAngle + (rotationValues.middleArmCount * 5);
+                // Calculate the target position relative to the platform
+                const targetX = intersectPoint.x - platformX;
+                const targetZ = intersectPoint.z - platformZ;
 
-                setUpperArmRotation(tiltAngle);
-                setLowerArmRotation(tiltAngle);
+                // Calculate horizontal distance
+                const horizontalDistance = Math.sqrt(targetX * targetX + targetZ * targetZ);
 
-                // Set all middle arms to the same tilt angle
-                setAllMiddleArmRotations(tiltAngle);
+                // Get arm segment lengths
+                const upperArmLength = 30; // UpperArm longitude
+                const lowerArmLength = 30; // LowerArm longitude
+                const middleArmLength = rotationValuesRef.current.middleArmLength;
 
-                // Also tilt the grip
-                setGripRotation(tiltAngle);
+                // Calculate required reach distance
+                const targetDistance = horizontalDistance;
+                const totalArmLength = upperArmLength + lowerArmLength + (middleArmCount * middleArmLength);
+                const reachRatio = targetDistance / totalArmLength;
+
+                // Direct calculation based on arm count and distance
+                let bendAngle;
+                if (middleArmCount === 0) {
+                    // 0 arms - keep as is (working well)
+                    bendAngle = 90 * (1 - reachRatio * 0.4);
+                } else if (middleArmCount === 1) {
+                    // 1 arm
+                    bendAngle = 80 * (1 - reachRatio * 0.5);
+                } else if (middleArmCount === 2) {
+                    // 2 arms
+                    bendAngle = 75 * (1 - reachRatio * 0.55);
+                } else if (middleArmCount === 3) {
+                    // 3 arms
+                    bendAngle = 70 * (1 - reachRatio * 0.6);
+                } else if (middleArmCount === 4) {
+                    // 4 arms
+                    bendAngle = 65 * (1 - reachRatio * 0.65);
+                } else {
+                    // 5+ arms
+                    bendAngle = 60 * (1 - reachRatio * 0.7);
+                }
+
+                // Apply the calculated angle to all joints
+                setUpperArmRotation(bendAngle);
+                setLowerArmRotation(bendAngle);
+                setAllMiddleArmRotations(bendAngle);
+                setGripRotation(bendAngle);
             }
         };
 
