@@ -14,14 +14,14 @@ import { calculateInverseKinematics } from '../utils/inverse-kinematics';
 const MainCanvas: React.FC = () => {
     const canvasContainerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const { rotationValues, setBaseRotation, setUpperArmRotation, setMiddleArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition, setMiddleArmCount } = useRotation();
+    const { rotationValues, setBaseRotation, setUpperArmRotation, setMiddleArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition, setMiddleArmCount, setMiddleArmLength } = useRotation();
 
     // Store objects as refs to maintain them between renders
     const canvasObjectRef = useRef<CanvasObject | null>(null);
     const platformRef = useRef<Platform>(new Platform(0x666666));
     const robotBaseRef = useRef<RobotBase>(new RobotBase(0xaaaaee));
     const upperArmRef = useRef<UpperArm>(new UpperArm(0xaaaaee));
-    const middleArmsRef = useRef<MiddleArm[]>([new MiddleArm(0xaaaaee)]);
+    const middleArmsRef = useRef<MiddleArm[]>([new MiddleArm(0xaaaaee, 25)]);
     const lowerArmRef = useRef<LowerArm>(new LowerArm(0xaaaaee));
     const gripRef = useRef<Grip>(new Grip(0xaaaaee));
     const raycastRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
@@ -184,7 +184,7 @@ const MainCanvas: React.FC = () => {
             // Create new middle arms
             const newMiddleArms: MiddleArm[] = [];
             for (let i = 0; i < count; i++) {
-                newMiddleArms.push(new MiddleArm(0xaaaaee));
+                newMiddleArms.push(new MiddleArm(0xaaaaee, rotationValues.middleArmLength));
             }
             middleArmsRef.current = newMiddleArms;
             
@@ -218,6 +218,13 @@ const MainCanvas: React.FC = () => {
             }
         });
     }, [rotationValues.middleArmRotations]);
+
+    // Update middle arms length
+    useEffect(() => {
+        middleArmsRef.current.forEach(arm => {
+            arm.updateLength(rotationValues.middleArmLength);
+        });
+    }, [rotationValues.middleArmLength]);
 
     useEffect(() => {
         const angle = rotationValues.lowerArmRotation * Math.PI / 180;

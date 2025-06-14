@@ -10,6 +10,7 @@ interface RotationVariables {
   platformX: number;
   platformZ: number;
   middleArmCount: number;
+  middleArmLength: number;
 }
 
 interface RotationContextType {
@@ -21,6 +22,7 @@ interface RotationContextType {
   setGripRotation: (value: number) => void;
   setPlatformPosition: (x: number, z: number) => void;
   setMiddleArmCount: (count: number) => void;
+  setMiddleArmLength: (length: number) => void;
 }
 
 const RotationContext = createContext<RotationContextType | undefined>(undefined);
@@ -35,6 +37,7 @@ export const RotationProvider: React.FC<{ children: ReactNode }> = ({ children }
     platformX: 0,
     platformZ: 0,
     middleArmCount: 1,
+    middleArmLength: 25,
   });
 
   const setBaseRotation = (value: number) => {
@@ -76,6 +79,10 @@ export const RotationProvider: React.FC<{ children: ReactNode }> = ({ children }
     setRotationValues(prev => ({ ...prev, platformX: x, platformZ: z }));
   };
 
+  const setMiddleArmLength = (length: number) => {
+    setRotationValues(prev => ({ ...prev, middleArmLength: length }));
+  };
+
   return (
     <RotationContext.Provider value={{
       rotationValues,
@@ -85,7 +92,8 @@ export const RotationProvider: React.FC<{ children: ReactNode }> = ({ children }
       setLowerArmRotation,
       setGripRotation,
       setPlatformPosition,
-      setMiddleArmCount
+      setMiddleArmCount,
+      setMiddleArmLength
     }}>
       {children}
     </RotationContext.Provider>

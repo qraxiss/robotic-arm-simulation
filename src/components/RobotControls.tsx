@@ -3,7 +3,7 @@ import React from 'react';
 import { useRotation } from '../store/rotationStore';
 
 const RobotControls: React.FC = () => {
-    const { rotationValues, setBaseRotation, setUpperArmRotation, setMiddleArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition, setMiddleArmCount } = useRotation();
+    const { rotationValues, setBaseRotation, setUpperArmRotation, setMiddleArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition, setMiddleArmCount, setMiddleArmLength } = useRotation();
 
     return (
         <div className="control-panel">
@@ -44,6 +44,21 @@ const RobotControls: React.FC = () => {
                 />
                 <span style={{ marginLeft: '10px' }}>{rotationValues.middleArmCount}</span>
             </div>
+            {rotationValues.middleArmCount > 0 && (
+                <div className="control">
+                    <label htmlFor="middle-arm-length">Middle Arm Length:</label>
+                    <input
+                        id="middle-arm-length"
+                        type="range"
+                        value={rotationValues.middleArmLength}
+                        onChange={(e) => setMiddleArmLength(Number(e.target.value))}
+                        min="10"
+                        max="40"
+                        step="1"
+                    />
+                    <span style={{ marginLeft: '10px' }}>{rotationValues.middleArmLength}</span>
+                </div>
+            )}
             {rotationValues.middleArmRotations.map((rotation, index) => (
                 <div key={index} className="control">
                     <label htmlFor={`middle-arm-rotation-${index}`}>Middle Arm {index + 1} Rotation:</label>
