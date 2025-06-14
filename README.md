@@ -1,4 +1,4 @@
-# THREE.JS TABANLI ROBOT KOL SİMÜLASYONU
+# THREE.JS TABANLI ROBOTİK KOL SİMÜLASYONU
 
 **Proje Adı:** Three.js Tabanlı Dinamik Robot Kol Simülasyonu  
 **Öğrenci:** Mehmet Fatih Güman  
@@ -6,7 +6,8 @@
 **Üniversite:** Konya Teknik Üniversitesi  
 **Bölüm:** Bilgisayar Mühendisliği  
 **Ders:** Bitirme Projesi  
-**Teslim Tarihi:** 14 Haziran 2025
+**Teslim Tarihi:** 14 Haziran 2025  
+**GitHub:** <https://github.com/qraxiss/robotic-arm-simulation>
 
 ---
 
@@ -24,12 +25,15 @@
    - 3.4 [Animasyon ve Hareket](#34-animasyon-ve-hareket)
 4. [SONUÇ](#4-sonuç)
 5. [KAYNAKLAR](#kaynaklar)
+6. [EKLER](#ekler)
+   - Ek 1: [Proje Geliştirme Commit Geçmişi](#ek-1-proje-geliştirme-commit-geçmişi)
+   - Ek 2: [Projeyi Çalıştırma Kılavuzu](#ek-2-projeyi-çalıştırma-kılavuzu)
 
 ---
 
 ## ÖZET
 
-Bu proje, Three.js kütüphanesi kullanılarak geliştirilmiş, web tabanlı bir robot kol simülasyonu uygulamasıdır. Nisan-Haziran 2025 tarihleri arasında iteratif olarak geliştirilen uygulama, kullanıcıların gerçek zamanlı olarak çok eklemli bir robot kolu kontrol etmesine olanak tanır. Sistem özellikleri arasında dinamik segment sayısı (0-5 arası ayarlanabilir), değiştirilebilir segment uzunluğu (10-40 birim), click-based inverse kinematics benzeri konumlandırma ve smooth sequential animasyonlar bulunmaktadır. React ve TypeScript teknolojileri ile tip güvenli olarak geliştirilmiş sistem, 20'den fazla iterasyon ile basit bir 3D platformdan karmaşık bir robot simülasyonuna evrilmiştir. Geliştirme sürecinde karşılaşılan ters kinematik hesaplama, dinamik segment yönetimi ve animasyon senkronizasyonu gibi zorluklar, binary search'ten reach ratio bazlı hesaplamaya geçiş, useRef hook kullanımı ve callback tabanlı animasyon sistemi gibi çözümlerle aşılmıştır. Proje, endüstriyel robot simülasyonları için eğitim amaçlı kullanılabilecek, platform bağımsız çalışan, kullanıcı dostu bir web uygulaması sunmaktadır.
+Bu proje, Three.js kütüphanesi kullanılarak geliştirilmiş, web tabanlı bir robot kol simülasyonu uygulamasıdır. Nisan-Haziran 2025 tarihleri arasında iteratif olarak geliştirilen uygulama, kullanıcıların gerçek zamanlı olarak çok eklemli bir robot kolu kontrol etmesine olanak tanır. Sistem özellikleri arasında dinamik segment sayısı (0-5 arası ayarlanabilir), değiştirilebilir segment uzunluğu (10-40 birim), click-based inverse kinematics benzeri konumlandırma ve smooth sequential animasyonlar bulunmaktadır. React ve TypeScript teknolojileri ile tip güvenli olarak geliştirilmiş sistem, 20'den fazla iterasyon ile basit bir 3D platformdan karmaşık bir robot simülasyonuna evrilmiştir. Geliştirme sürecinde karşılaşılan ters kinematik hesaplama, dinamik segment yönetimi ve animasyon senkronizasyonu gibi zorluklar, binary search'ten reach ratio bazlı hesaplamaya geçiş, useRef hook kullanımı ve callback tabanlı animasyon sistemi gibi çözümlerle aşılmıştır. Proje, endüstriyel robot simülasyonları için eğitim amaçlı kullanılabilecek, platform bağımsız çalışan, kullanıcı dostu bir web uygulaması sunmaktadır. Uygulama, Vite build tool'u ile modern bir geliştirme ortamı sağlamakta ve GitHub üzerinden "robotic-arm-simulation" adıyla açık kaynak olarak erişilebilmektedir.
 
 ---
 
@@ -39,7 +43,7 @@ Endüstri 4.0 ile birlikte robot teknolojileri ve otomasyon sistemleri üretim s
 
 Web tabanlı 3D görselleştirme teknolojilerinin gelişmesiyle birlikte, robot simülasyonları artık tarayıcı ortamında gerçekleştirilebilmektedir (3). Three.js kütüphanesi, WebGL teknolojisini kullanarak karmaşık 3D sahnelerin oluşturulmasını ve gerçek zamanlı render edilmesini sağlamaktadır (14). Bu teknoloji, robot kol simülasyonlarının geniş kitlelere ulaşmasını ve platform bağımsız çalışmasını mümkün kılmaktadır.
 
-Bu proje, Nisan 2025'te başlatılmış (commit: 8c0a48aa) ve 2 aylık iteratif geliştirme süreciyle tamamlanmıştır. Proje kapsamında, dinamik segment sayısına sahip, ters kinematik hesaplamalar yapabilen ve kullanıcı etkileşimlerine gerçek zamanlı yanıt verebilen bir robot kol simülasyonu geliştirilmiştir. Toplam 20'den fazla major commit ile sistem, basit bir platform görselleştirmesinden (commit: b8e02410) karmaşık bir robot kol simülasyonuna evrilmiştir.
+Bu proje, Nisan 2025'te başlatılmış (commit: 8c0a48aa) ve 2 aylık iteratif geliştirme süreciyle tamamlanmıştır. Proje kapsamında, dinamik segment sayısına sahip, ters kinematik hesaplamalar yapabilen ve kullanıcı etkileşimlerine gerçek zamanlı yanıt verebilen bir robot kol simülasyonu geliştirilmiştir. Toplam 20'den fazla major commit ile sistem, basit bir platform görselleştirmesinden (commit: b8e02410) karmaşık bir robot kol simülasyonuna evrilmiştir. Proje kaynak kodları GitHub üzerinde "robotic-arm-simulation" adıyla açık kaynak olarak paylaşılmıştır.
 
 Geliştirilen uygulama, eğitim kurumlarında robotik eğitimi için kullanılabileceği gibi, endüstriyel uygulamalar için prototip geliştirme aşamasında da değerli bir araç olarak hizmet edebilir (7). Modern web teknolojilerinin robotik simülasyonlar için sunduğu olanakları göstermekte ve gelecekteki web tabanlı endüstriyel uygulamalar için bir temel oluşturmaktadır.
 
@@ -107,7 +111,7 @@ Bu özellikler sayesinde, karmaşık robot kol hareketleri tarayıcıda sorunsuz
 
 ### 3.1 Sistem Mimarisi
 
-Uygulama, React ve TypeScript kullanılarak komponent tabanlı bir mimari üzerine inşa edilmiştir (commit: 8c0a48aa). Sistem mimarisi proje sürecinde aşamalı olarak geliştirilmiştir:
+Uygulama, React ve TypeScript kullanılarak komponent tabanlı bir mimari üzerine inşa edilmiştir (commit: 8c0a48aa). Proje, modern build tool'u Vite kullanılarak geliştirilmiş olup, Hot Module Replacement (HMR) desteği ile hızlı geliştirme döngüsü sağlamaktadır. Sistem mimarisi proje sürecinde aşamalı olarak geliştirilmiştir:
 
 **İlk Aşama (commit: 8c0a48aa):**
 
@@ -127,16 +131,24 @@ Uygulama, React ve TypeScript kullanılarak komponent tabanlı bir mimari üzeri
 **Final Mimari:**
 
 ```
-├── App.tsx                 # Ana uygulama bileşeni
-├── components/
-│   ├── MainCanvas.tsx      # 3D sahne ve render yönetimi
-│   └── RobotControls.tsx   # Kullanıcı kontrol arayüzü
-├── module-3D/
-│   ├── canvas/            # Canvas ve sahne yönetimi
-│   ├── segments/          # Robot kol parçaları
-│   └── utils/             # Yardımcı fonksiyonlar
-└── store/
-    └── rotationStore.tsx   # Global durum yönetimi
+├── src/
+│   ├── components/         # React komponentleri
+│   │   ├── MainCanvas.tsx  # 3D sahne ve render yönetimi
+│   │   └── RobotControls.tsx # Kullanıcı kontrol arayüzü
+│   ├── module-3D/         # Three.js 3D modülleri
+│   │   ├── canvas/        # Canvas ve sahne yönetimi
+│   │   ├── segments/      # Robot kol parçaları
+│   │   └── utils/         # Yardımcı fonksiyonlar
+│   ├── store/             # State yönetimi
+│   │   └── rotationStore.tsx # Global durum yönetimi
+│   ├── App.tsx            # Ana uygulama bileşeni
+│   ├── main.tsx           # Uygulama giriş noktası
+│   └── main.css           # Global stiller
+├── public/                # Statik dosyalar
+├── package.json           # Proje bağımlılıkları
+├── tsconfig.json          # TypeScript konfigürasyonu
+├── vite.config.ts         # Vite build konfigürasyonu
+└── eslint.config.js       # ESLint kod kalite kuralları
 ```
 
 State yönetimi için React Context API kullanılmış olup (commit: 41ade150), tüm rotasyon ve pozisyon verileri merkezi bir store'da tutulmaktadır (2). CSS stilleri modüler olarak import edilmiştir (commit: 41ade150).
@@ -272,7 +284,7 @@ Başlangıçta mouse takibi yaklaşımı (handleMouseMove) kullanılmış ancak 
 **6. Kol Sayısına Göre Dinamik Açı Ayarlaması:**
 Farklı kol konfigürasyonlarında self-collision ve erişim problemleri yaşanmıştır. Progressive upper arm rotation (commit: ceb1ad09) ve differential middle arm bending (commit: bce9eb91) implementasyonları ile her konfigürasyon için optimal açılar bulunmuştur (11).
 
-Bu proje, web teknolojilerinin karmaşık robotik simülasyonlar için yeterli olduğunu ve iteratif geliştirme sürecinin başarılı sonuçlar verdiğini göstermektedir. Modern web standartlarının ve 3D grafik kütüphanelerinin gelişmesiyle, bu tür uygulamaların kapsamı ve yetenekleri artmaya devam edecektir (19).
+Bu proje, web teknolojilerinin karmaşık robotik simülasyonlar için yeterli olduğunu ve iteratif geliştirme sürecinin başarılı sonuçlar verdiğini göstermektedir. Modern web standartlarının ve 3D grafik kütüphanelerinin gelişmesiyle, bu tür uygulamaların kapsamı ve yetenekleri artmaya devam edecektir (19). Proje kaynak kodları GitHub üzerinden (<https://github.com/qraxiss/robotic-arm-simulation>) açık kaynak olarak erişilebilir durumdadır ve eğitim amaçlı kullanım için değerli bir kaynak oluşturmaktadır.
 
 ---
 
@@ -323,6 +335,8 @@ Bu proje, web teknolojilerinin karmaşık robotik simülasyonlar için yeterli o
 ## EKLER
 
 ### Ek 1: Proje Geliştirme Commit Geçmişi
+
+**GitHub Repository:** <https://github.com/qraxiss/robotic-arm-simulation>
 
 Aşağıda projenin gelişim sürecini gösteren commit geçmişi kronolojik sırayla sunulmuştur:
 
@@ -525,3 +539,128 @@ Aşağıda projenin gelişim sürecini gösteren commit geçmişi kronolojik sı
 
 **Commit:** `3533bb15` | **Tarih:** 14 Haziran 2025  
 **Açıklama:** Ana dal ile birleştirme yapıldı
+
+---
+
+### Ek 2: Projeyi Çalıştırma Kılavuzu
+
+#### Sistem Gereksinimleri
+
+- Node.js (v16 veya üzeri)
+- npm veya yarn paket yöneticisi
+- Modern web tarayıcısı (Chrome, Firefox, Safari, Edge)
+
+#### Kurulum Adımları
+
+1. **Projeyi Klonlama**
+
+```bash
+git clone https://github.com/qraxiss/robotic-arm-simulation.git
+cd robotic-arm-simulation
+```
+
+2. **Bağımlılıkları Yükleme**
+
+```bash
+npm install
+# veya
+yarn install
+```
+
+#### Proje Bağımlılıkları
+
+**Ana Bağımlılıklar:**
+
+- `react`: ^19.0.0 - UI framework
+- `react-dom`: ^19.0.0 - React DOM render
+- `three`: ^0.153.0 - 3D grafik kütüphanesi
+- `three-orbitcontrols-ts`: ^0.1.2 - Kamera kontrolü
+- `@types/three`: ^0.175.0 - TypeScript tip tanımları
+
+**Geliştirme Bağımlılıkları:**
+
+- `vite`: ^6.2.0 - Build tool ve dev server
+- `typescript`: ~5.7.2 - TypeScript derleyici
+- `@vitejs/plugin-react`: ^4.3.4 - React Vite plugin
+- ESLint ve ilgili pluginler
+
+#### Projeyi Çalıştırma
+
+1. **Geliştirme Ortamında Çalıştırma**
+
+```bash
+npm run dev
+# veya
+yarn dev
+```
+
+Proje varsayılan olarak `http://localhost:5173` adresinde çalışacaktır.
+
+2. **Production Build Oluşturma**
+
+```bash
+npm run build
+# veya
+yarn build
+```
+
+Build dosyaları `dist/` klasörüne oluşturulacaktır.
+
+3. **Production Build'i Önizleme**
+
+```bash
+npm run preview
+# veya
+yarn preview
+```
+
+4. **Kod Kalitesi Kontrolü**
+
+```bash
+npm run lint
+# veya
+yarn lint
+```
+
+#### Kullanım Talimatları
+
+1. **Temel Kontroller:**
+   - Sol panel üzerindeki slider'ları kullanarak robot kolunun her eklemini manuel olarak kontrol edebilirsiniz
+   - Middle Arm Count slider'ı ile 0-5 arası dinamik kol segmenti ekleyebilirsiniz
+   - Middle Arm Length slider'ı ile kol uzunluğunu 10-40 birim arasında ayarlayabilirsiniz
+
+2. **Tıklama Bazlı Konumlandırma:**
+   - 3D sahneye tıklayarak robot kolunun o noktaya yönelmesini sağlayabilirsiniz
+   - Sistem otomatik olarak platform pozisyonu ve kol açılarını hesaplayacaktır
+
+3. **Kamera Kontrolü:**
+   - Sol tık + sürükleme: Sahneyi döndürme
+   - Sağ tık + sürükleme: Sahneyi kaydırma
+   - Fare tekerleği: Yakınlaştırma/uzaklaştırma
+
+#### Proje Yapısı
+
+```
+robotic-arm-simulation/
+├── src/
+│   ├── components/        # React komponentleri
+│   ├── module-3D/        # Three.js 3D modülleri
+│   │   ├── canvas/       # Canvas yönetimi
+│   │   ├── segments/     # Robot segmentleri
+│   │   └── utils/        # Yardımcı fonksiyonlar
+│   ├── store/            # State yönetimi
+│   ├── App.tsx           # Ana uygulama
+│   └── main.tsx          # Giriş noktası
+├── public/               # Statik dosyalar
+├── package.json          # Proje bağımlılıkları
+├── tsconfig.json         # TypeScript konfigürasyonu
+├── vite.config.ts        # Vite konfigürasyonu
+└── README.md             # Proje dokümantasyonu
+```
+
+#### Sorun Giderme
+
+- **Port çakışması:** Varsayılan port (5173) kullanımdaysa, Vite otomatik olarak başka bir port seçecektir
+- **Bağımlılık hataları:** `node_modules` klasörünü silip `npm install` komutunu tekrar çalıştırın
+- **TypeScript hataları:** `npm run build` komutu ile tip hatalarını kontrol edebilirsiniz
+- **3D render sorunları:** WebGL desteği olan modern bir tarayıcı kullandığınızdan emin olun
