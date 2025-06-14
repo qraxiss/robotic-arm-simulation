@@ -49,6 +49,13 @@ export class MiddleArm extends Segment {
     this.lateralCylinder.position.y = newLength / 2;
     
     this.add(this.lateralCylinder);
+    
+    // Update positions of all child segments
+    this.children.forEach(child => {
+      if (child instanceof Segment) {
+        child.position.y = this.longitude;
+      }
+    });
   }
 
   animate(position: number, rotation: number) {
