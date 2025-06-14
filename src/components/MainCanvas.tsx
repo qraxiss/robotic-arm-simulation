@@ -66,23 +66,6 @@ const MainCanvas: React.FC = () => {
             }
         };
 
-        const handleMouseMove = (event: MouseEvent) => {
-            if (!canvas) return;
-
-            const canvasRect: DOMRect = canvas.getBoundingClientRect();
-            const mouseX = event.clientX - canvasRect.left;
-            const mouseY = event.clientY - canvasRect.top;
-
-            const canvasWidth = canvas.clientWidth;
-            const normalizedX = (mouseX / canvasWidth) * 22.5;
-
-            const canvasHeight = canvas.clientHeight;
-            const normalizedY = (mouseY / canvasHeight) * 22.5;
-            const maxRotation = Math.PI * 2;
-
-            setBaseRotation(maxRotation * normalizedX);
-            setLowerArmRotation(maxRotation * normalizedY + Math.PI / 3);
-        };
 
         const handleClick = (event: MouseEvent) => {
             if (!canvas || !canvasObjectRef.current) return;
@@ -119,7 +102,6 @@ const MainCanvas: React.FC = () => {
 
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('keydown', handleKeyDown);
-        canvas.addEventListener('mousemove', handleMouseMove);
         canvas.addEventListener('click', handleClick);
 
         // Initialize 3D objects
@@ -152,7 +134,6 @@ const MainCanvas: React.FC = () => {
         return () => {
             window.removeEventListener('resize', resizeCanvas);
             window.removeEventListener('keydown', handleKeyDown);
-            canvas.removeEventListener('mousemove', handleMouseMove);
             canvas.removeEventListener('click', handleClick);
         };
     }, []);
