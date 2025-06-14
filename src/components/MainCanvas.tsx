@@ -130,16 +130,16 @@ const MainCanvas: React.FC = () => {
                     bendAngle = 80 * (1 - reachRatio * 0.5);
                 } else if (middleArmCount === 2) {
                     // 2 arms
-                    bendAngle = 75 * (1 - reachRatio * 0.55);
+                    bendAngle = 72 * (1 - reachRatio * 0.58);
                 } else if (middleArmCount === 3) {
                     // 3 arms
-                    bendAngle = 70 * (1 - reachRatio * 0.6);
+                    bendAngle = 65 * (1 - reachRatio * 0.65);
                 } else if (middleArmCount === 4) {
                     // 4 arms
-                    bendAngle = 65 * (1 - reachRatio * 0.65);
+                    bendAngle = 60 * (1 - reachRatio * 0.7);
                 } else {
                     // 5+ arms
-                    bendAngle = 60 * (1 - reachRatio * 0.7);
+                    bendAngle = 55 * (1 - reachRatio * 0.75);
                 }
 
                 // Apply the calculated angle to all joints
