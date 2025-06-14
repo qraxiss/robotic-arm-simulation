@@ -15,6 +15,8 @@ const MainCanvas: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { rotationValues, setBaseRotation, setUpperArmRotation, setAllMiddleArmRotations, setMiddleArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition } = useRotation();
     const rotationValuesRef = useRef(rotationValues);
+    const armAnimationRef = useRef<number | null>(null);
+    const baseAnimationRef = useRef<number | null>(null);
 
     // Update ref when rotationValues changes
     useEffect(() => {
@@ -73,6 +75,79 @@ const MainCanvas: React.FC = () => {
         };
 
 
+        const animateArmRotations = (startValues: any, targetValues: any, duration: number, onComplete?: () => void) => {
+            if (armAnimationRef.current) {
+                cancelAnimationFrame(armAnimationRef.current);
+            }
+
+            const startTime = Date.now();
+            const animate = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+
+                // Animate upper arm
+                const currentUpperArm = startValues.upperArm + (targetValues.upperArm - startValues.upperArm) * easeProgress;
+                setUpperArmRotation(currentUpperArm);
+
+                // Animate lower arm
+                const currentLowerArm = startValues.lowerArm + (targetValues.lowerArm - startValues.lowerArm) * easeProgress;
+                setLowerArmRotation(currentLowerArm);
+
+                // Animate grip
+                const currentGrip = startValues.grip + (targetValues.grip - startValues.grip) * easeProgress;
+                setGripRotation(currentGrip);
+
+                // Animate middle arms
+                if (startValues.middleArms && targetValues.middleArms) {
+                    targetValues.middleArms.forEach((targetRotation: number, index: number) => {
+                        const startRotation = startValues.middleArms[index] || 0;
+                        const currentRotation = startRotation + (targetRotation - startRotation) * easeProgress;
+                        setMiddleArmRotation(index, currentRotation);
+                    });
+                }
+
+                if (progress < 1) {
+                    armAnimationRef.current = requestAnimationFrame(animate);
+                } else {
+                    armAnimationRef.current = null;
+                    if (onComplete) onComplete();
+                }
+            };
+
+            animate();
+        };
+
+        const animateBaseRotation = (startAngle: number, targetAngle: number, duration: number, onComplete?: () => void) => {
+            if (baseAnimationRef.current) {
+                cancelAnimationFrame(baseAnimationRef.current);
+            }
+
+            const startTime = Date.now();
+            const animate = () => {
+                const elapsed = Date.now() - startTime;
+                const progress = Math.min(elapsed / duration, 1);
+                const easeProgress = 1 - Math.pow(1 - progress, 3); // Ease out cubic
+
+                // Handle angle wrapping for shortest path
+                let angleDiff = targetAngle - startAngle;
+                if (angleDiff > 180) angleDiff -= 360;
+                if (angleDiff < -180) angleDiff += 360;
+
+                const currentAngle = startAngle + angleDiff * easeProgress;
+                setBaseRotation(currentAngle);
+
+                if (progress < 1) {
+                    baseAnimationRef.current = requestAnimationFrame(animate);
+                } else {
+                    baseAnimationRef.current = null;
+                    if (onComplete) onComplete();
+                }
+            };
+
+            animate();
+        };
+
         const handleClick = (event: MouseEvent) => {
             if (!canvas || !canvasObjectRef.current) return;
 
@@ -103,89 +178,116 @@ const MainCanvas: React.FC = () => {
                 }
                 const platformX = intersectPoint.x - direction.x * offsetDistance;
                 const platformZ = intersectPoint.z - direction.z * offsetDistance;
-                setPlatformPosition(platformX, platformZ);
 
                 // Calculate base rotation to face the clicked point
                 const angleToTarget = Math.atan2(intersectPoint.x - platformX, intersectPoint.z - platformZ);
-                setBaseRotation(angleToTarget * 180 / Math.PI);
 
-                // Calculate the target position relative to the platform
-                const targetX = intersectPoint.x - platformX;
-                const targetZ = intersectPoint.z - platformZ;
+                // Get current arm positions
+                const currentValues = {
+                    upperArm: rotationValuesRef.current.upperArmRotation,
+                    lowerArm: rotationValuesRef.current.lowerArmRotation,
+                    grip: rotationValuesRef.current.gripRotation,
+                    middleArms: [...rotationValuesRef.current.middleArmRotations]
+                };
 
-                // Calculate horizontal distance
-                const horizontalDistance = Math.sqrt(targetX * targetX + targetZ * targetZ);
+                // First animate arms to straight position
+                const straightValues = {
+                    upperArm: 0,
+                    lowerArm: 0,
+                    grip: 0,
+                    middleArms: new Array(middleArmCount).fill(0)
+                };
 
-                // Get arm segment lengths
-                const upperArmLength = 30; // UpperArm longitude
-                const lowerArmLength = 30; // LowerArm longitude
-                const middleArmLength = rotationValuesRef.current.middleArmLength;
+                animateArmRotations(currentValues, straightValues, 500, () => {
+                    // After arms are straight, rotate the base
+                    setTimeout(() => {
+                        const currentBaseRotation = rotationValuesRef.current.baseRotation;
+                        animateBaseRotation(currentBaseRotation, angleToTarget * 180 / Math.PI, 600, () => {
+                            // After base rotation, move the platform
+                            setPlatformPosition(platformX, platformZ);
 
-                // Calculate required reach distance
-                const targetDistance = horizontalDistance;
-                const totalArmLength = upperArmLength + lowerArmLength + (middleArmCount * middleArmLength);
-                const reachRatio = targetDistance / totalArmLength;
+                            // After platform animation completes, bend the arms
+                            setTimeout(() => {
+                        // Calculate the target position relative to the platform
+                        const targetX = intersectPoint.x - platformX;
+                        const targetZ = intersectPoint.z - platformZ;
 
-                // Direct calculation based on arm count and distance
-                let bendAngle;
-                if (middleArmCount === 0) {
-                    // 0 arms - keep as is (working well)
-                    bendAngle = 90 * (1 - reachRatio * 0.4);
-                } else if (middleArmCount === 1) {
-                    // 1 arm
-                    bendAngle = 80 * (1 - reachRatio * 0.5);
-                } else if (middleArmCount === 2) {
-                    // 2 arms - slightly less bend
-                    bendAngle = 70 * (1 - reachRatio * 0.6);
-                } else if (middleArmCount === 3) {
-                    // 3 arms - less bend than 2
-                    bendAngle = 62 * (1 - reachRatio * 0.67);
-                } else if (middleArmCount === 4) {
-                    // 4 arms - less bend than 3
-                    bendAngle = 57 * (1 - reachRatio * 0.72);
-                } else {
-                    // 5+ arms - less bend than 4
-                    bendAngle = 52 * (1 - reachRatio * 0.77);
-                }
+                        // Calculate horizontal distance
+                        const horizontalDistance = Math.sqrt(targetX * targetX + targetZ * targetZ);
 
-                // Apply the calculated angle to all joints
-                // Upper arm uses specific angles based on arm count
-                let upperArmAngle;
-                if (middleArmCount === 0) {
-                    upperArmAngle = 85;
-                } else if (middleArmCount === 1) {
-                    upperArmAngle = 80;
-                } else if (middleArmCount === 2) {
-                    upperArmAngle = 75;
-                } else if (middleArmCount === 3) {
-                    upperArmAngle = 70;
-                } else if (middleArmCount === 4) {
-                    upperArmAngle = 65;
-                } else {
-                    upperArmAngle = 60;
-                }
+                        // Get arm segment lengths
+                        const upperArmLength = 30; // UpperArm longitude
+                        const lowerArmLength = 30; // LowerArm longitude
+                        const middleArmLength = rotationValuesRef.current.middleArmLength;
 
-                setUpperArmRotation(bendAngle * upperArmAngle / 100);
-                setLowerArmRotation(bendAngle);
+                        // Calculate required reach distance
+                        const targetDistance = horizontalDistance;
+                        const totalArmLength = upperArmLength + lowerArmLength + (middleArmCount * middleArmLength);
+                        const reachRatio = targetDistance / totalArmLength;
 
-                // For 2+ arms, make the first middle arm bend less
-                if (middleArmCount >= 2) {
-                    const middleArmRotations = [];
-                    // First middle arm bends less
-                    middleArmRotations.push(bendAngle * 0.7);
-                    // Rest of the middle arms bend normally
-                    for (let i = 1; i < middleArmCount; i++) {
-                        middleArmRotations.push(bendAngle);
-                    }
-                    // Set each middle arm rotation individually
-                    middleArmRotations.forEach((rotation, index) => {
-                        setMiddleArmRotation(index, rotation);
-                    });
-                } else {
-                    setAllMiddleArmRotations(bendAngle);
-                }
+                        // Direct calculation based on arm count and distance
+                        let bendAngle;
+                        if (middleArmCount === 0) {
+                            // 0 arms - keep as is (working well)
+                            bendAngle = 90 * (1 - reachRatio * 0.4);
+                        } else if (middleArmCount === 1) {
+                            // 1 arm
+                            bendAngle = 80 * (1 - reachRatio * 0.5);
+                        } else if (middleArmCount === 2) {
+                            // 2 arms - slightly less bend
+                            bendAngle = 70 * (1 - reachRatio * 0.6);
+                        } else if (middleArmCount === 3) {
+                            // 3 arms - less bend than 2
+                            bendAngle = 62 * (1 - reachRatio * 0.67);
+                        } else if (middleArmCount === 4) {
+                            // 4 arms - less bend than 3
+                            bendAngle = 57 * (1 - reachRatio * 0.72);
+                        } else {
+                            // 5+ arms - less bend than 4
+                            bendAngle = 52 * (1 - reachRatio * 0.77);
+                        }
 
-                setGripRotation(bendAngle);
+                        // Apply the calculated angle to all joints
+                        // Upper arm uses specific angles based on arm count
+                        let upperArmAngle;
+                        if (middleArmCount === 0) {
+                            upperArmAngle = 85;
+                        } else if (middleArmCount === 1) {
+                            upperArmAngle = 80;
+                        } else if (middleArmCount === 2) {
+                            upperArmAngle = 75;
+                        } else if (middleArmCount === 3) {
+                            upperArmAngle = 70;
+                        } else if (middleArmCount === 4) {
+                            upperArmAngle = 65;
+                        } else {
+                            upperArmAngle = 60;
+                        }
+
+                        // Calculate target bend values
+                        const targetBendValues = {
+                            upperArm: bendAngle * upperArmAngle / 100,
+                            lowerArm: bendAngle,
+                            grip: bendAngle,
+                            middleArms: [] as number[]
+                        };
+
+                        // For 2+ arms, make the first middle arm bend less
+                        if (middleArmCount >= 2) {
+                            targetBendValues.middleArms.push(bendAngle * 0.7);
+                            for (let i = 1; i < middleArmCount; i++) {
+                                targetBendValues.middleArms.push(bendAngle);
+                            }
+                        } else if (middleArmCount === 1) {
+                            targetBendValues.middleArms = [bendAngle];
+                        }
+
+                        // Animate from straight to bent position
+                        animateArmRotations(straightValues, targetBendValues, 800);
+                            }, 1000); // Wait for platform animation to complete
+                        });
+                    }, 200); // Small delay after arms straighten
+                });
             }
         };
 
