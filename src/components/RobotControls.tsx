@@ -3,7 +3,7 @@ import React from 'react';
 import { useRotation } from '../store/rotationStore';
 
 const RobotControls: React.FC = () => {
-    const { rotationValues, setBaseRotation, setUpperArmRotation, setLowerArmRotation, setGripRotation } = useRotation();
+    const { rotationValues, setBaseRotation, setUpperArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition } = useRotation();
 
     return (
         <div className="control-panel">
@@ -52,6 +52,30 @@ const RobotControls: React.FC = () => {
                     onChange={(e) => setGripRotation(Number(e.target.value))}
                     min="-180"
                     max="180"
+                    step="1"
+                />
+            </div>
+            <div className="control">
+                <label htmlFor="platform-x">Platform X:</label>
+                <input
+                    id="platform-x"
+                    type="range"
+                    value={rotationValues.platformX}
+                    onChange={(e) => setPlatformPosition(Number(e.target.value), rotationValues.platformZ)}
+                    min="-50"
+                    max="50"
+                    step="1"
+                />
+            </div>
+            <div className="control">
+                <label htmlFor="platform-z">Platform Z:</label>
+                <input
+                    id="platform-z"
+                    type="range"
+                    value={rotationValues.platformZ}
+                    onChange={(e) => setPlatformPosition(rotationValues.platformX, Number(e.target.value))}
+                    min="-50"
+                    max="50"
                     step="1"
                 />
             </div>

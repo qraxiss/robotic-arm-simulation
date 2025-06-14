@@ -1,23 +1,29 @@
 // components/MainCanvas.tsx
 import React, { useRef, useEffect } from 'react';
+import * as THREE from 'three';
 import { CanvasObject } from '../module-3D/canvas/canvas-object';
 import { RobotBase } from '../module-3D/segments/robot-base';
 import { UpperArm } from '../module-3D/segments/upper-arm';
 import { LowerArm } from '../module-3D/segments/lower-arm';
 import { Grip } from '../module-3D/segments/grip';
+import { Platform } from '../module-3D/segments/platform';
 import { useRotation } from '../store/rotationStore';
+import { calculateInverseKinematics } from '../utils/inverse-kinematics';
 
 const MainCanvas: React.FC = () => {
     const canvasContainerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const { rotationValues, setBaseRotation, setUpperArmRotation, setLowerArmRotation, setGripRotation } = useRotation();
+    const { rotationValues, setBaseRotation, setUpperArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition } = useRotation();
 
     // Store objects as refs to maintain them between renders
     const canvasObjectRef = useRef<CanvasObject | null>(null);
+    const platformRef = useRef<Platform>(new Platform(0x666666));
     const robotBaseRef = useRef<RobotBase>(new RobotBase(0xaaaaee));
     const upperArmRef = useRef<UpperArm>(new UpperArm(0xaaaaee));
     const lowerArmRef = useRef<LowerArm>(new LowerArm(0xaaaaee));
     const gripRef = useRef<Grip>(new Grip(0xaaaaee));
+    const raycastRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
+    const mouseRef = useRef<THREE.Vector2>(new THREE.Vector2());
 
     useEffect(() => {
         const canvasContainer = canvasContainerRef.current;
@@ -76,28 +82,65 @@ const MainCanvas: React.FC = () => {
             setLowerArmRotation(maxRotation * normalizedY + Math.PI / 3);
         };
 
+        const handleClick = (event: MouseEvent) => {
+            if (!canvas || !canvasObjectRef.current) return;
+
+            const rect = canvas.getBoundingClientRect();
+            mouseRef.current.x = ((event.clientX - rect.left) / rect.width) * 2 - 1;
+            mouseRef.current.y = -((event.clientY - rect.top) / rect.height) * 2 + 1;
+
+            raycastRef.current.setFromCamera(mouseRef.current, canvasObjectRef.current.camera);
+
+            const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+            const intersectPoint = new THREE.Vector3();
+            raycastRef.current.ray.intersectPlane(groundPlane, intersectPoint);
+
+            if (intersectPoint) {
+                setPlatformPosition(intersectPoint.x, intersectPoint.z);
+                
+                const ikResult = calculateInverseKinematics(
+                    0,
+                    3,
+                    0,
+                    25,
+                    25,
+                    16.5
+                );
+                
+                if (ikResult) {
+                    setBaseRotation(ikResult.baseAngle * 180 / Math.PI);
+                    setUpperArmRotation(-ikResult.upperArmAngle * 180 / Math.PI);
+                    setLowerArmRotation(-ikResult.lowerArmAngle * 180 / Math.PI);
+                }
+            }
+        };
+
         window.addEventListener('resize', resizeCanvas);
         window.addEventListener('keydown', handleKeyDown);
         canvas.addEventListener('mousemove', handleMouseMove);
+        canvas.addEventListener('click', handleClick);
 
         // Initialize 3D objects
+        const platform = platformRef.current;
         const robotBase = robotBaseRef.current;
         const upperArm = upperArmRef.current;
         const lowerArm = lowerArmRef.current;
         const grip = gripRef.current;
 
+        platform.add(robotBase);
         robotBase.addChild(upperArm);
         upperArm.addChild(lowerArm);
         lowerArm.addChild(grip);
 
         canvasObjectRef.current = new CanvasObject(canvas);
         canvasObjectRef.current.start();
-        canvasObjectRef.current.addObject(robotBase);
+        canvasObjectRef.current.scene.add(platform);
 
         return () => {
             window.removeEventListener('resize', resizeCanvas);
             window.removeEventListener('keydown', handleKeyDown);
             canvas.removeEventListener('mousemove', handleMouseMove);
+            canvas.removeEventListener('click', handleClick);
         };
     }, []);
 
@@ -121,6 +164,31 @@ const MainCanvas: React.FC = () => {
         const angle = rotationValues.gripRotation * Math.PI / 180;
         gripRef.current.rotate(angle);
     }, [rotationValues.gripRotation]);
+
+    useEffect(() => {
+        const targetX = rotationValues.platformX;
+        const targetZ = rotationValues.platformZ;
+        const currentX = platformRef.current.position.x;
+        const currentZ = platformRef.current.position.z;
+        
+        const animationDuration = 1000;
+        const startTime = Date.now();
+        
+        const animate = () => {
+            const elapsed = Date.now() - startTime;
+            const progress = Math.min(elapsed / animationDuration, 1);
+            const easeProgress = 1 - Math.pow(1 - progress, 3);
+            
+            platformRef.current.position.x = currentX + (targetX - currentX) * easeProgress;
+            platformRef.current.position.z = currentZ + (targetZ - currentZ) * easeProgress;
+            
+            if (progress < 1) {
+                requestAnimationFrame(animate);
+            }
+        };
+        
+        animate();
+    }, [rotationValues.platformX, rotationValues.platformZ]);
 
     return (
         <div className="canvas-container" ref={canvasContainerRef}>
