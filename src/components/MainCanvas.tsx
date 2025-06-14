@@ -13,7 +13,7 @@ import { useRotation } from '../store/rotationStore';
 const MainCanvas: React.FC = () => {
     const canvasContainerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const { rotationValues, setBaseRotation, setUpperArmRotation, setAllMiddleArmRotations, setLowerArmRotation, setGripRotation, setPlatformPosition } = useRotation();
+    const { rotationValues, setBaseRotation, setUpperArmRotation, setAllMiddleArmRotations, setMiddleArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition } = useRotation();
     const rotationValuesRef = useRef(rotationValues);
     
     // Update ref when rotationValues changes
@@ -94,7 +94,13 @@ const MainCanvas: React.FC = () => {
                 // Move platform further behind the clicked point
                 // Distance based only on arm count
                 const middleArmCount = rotationValuesRef.current.middleArmCount;
-                const offsetDistance = 40 + (20 * middleArmCount);
+                let offsetDistance;
+                if (middleArmCount <= 1) {
+                    offsetDistance = 40 + (20 * middleArmCount);
+                } else {
+                    // For 2+ arms, use a smaller multiplier to keep platform closer
+                    offsetDistance = 40 + (15 * middleArmCount);
+                }
                 const platformX = intersectPoint.x - direction.x * offsetDistance;
                 const platformZ = intersectPoint.z - direction.z * offsetDistance;
                 setPlatformPosition(platformX, platformZ);
@@ -129,23 +135,40 @@ const MainCanvas: React.FC = () => {
                     // 1 arm
                     bendAngle = 80 * (1 - reachRatio * 0.5);
                 } else if (middleArmCount === 2) {
-                    // 2 arms
-                    bendAngle = 72 * (1 - reachRatio * 0.58);
+                    // 2 arms - slightly less bend
+                    bendAngle = 70 * (1 - reachRatio * 0.6);
                 } else if (middleArmCount === 3) {
-                    // 3 arms
-                    bendAngle = 65 * (1 - reachRatio * 0.65);
+                    // 3 arms - less bend than 2
+                    bendAngle = 62 * (1 - reachRatio * 0.67);
                 } else if (middleArmCount === 4) {
-                    // 4 arms
-                    bendAngle = 60 * (1 - reachRatio * 0.7);
+                    // 4 arms - less bend than 3
+                    bendAngle = 57 * (1 - reachRatio * 0.72);
                 } else {
-                    // 5+ arms
-                    bendAngle = 55 * (1 - reachRatio * 0.75);
+                    // 5+ arms - less bend than 4
+                    bendAngle = 52 * (1 - reachRatio * 0.77);
                 }
 
                 // Apply the calculated angle to all joints
                 setUpperArmRotation(bendAngle);
                 setLowerArmRotation(bendAngle);
-                setAllMiddleArmRotations(bendAngle);
+                
+                // For 2+ arms, make the first middle arm bend less
+                if (middleArmCount >= 2) {
+                    const middleArmRotations = [];
+                    // First middle arm bends less
+                    middleArmRotations.push(bendAngle * 0.7);
+                    // Rest of the middle arms bend normally
+                    for (let i = 1; i < middleArmCount; i++) {
+                        middleArmRotations.push(bendAngle);
+                    }
+                    // Set each middle arm rotation individually
+                    middleArmRotations.forEach((rotation, index) => {
+                        setMiddleArmRotation(index, rotation);
+                    });
+                } else {
+                    setAllMiddleArmRotations(bendAngle);
+                }
+                
                 setGripRotation(bendAngle);
             }
         };
