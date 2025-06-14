@@ -4,6 +4,7 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 interface RotationVariables {
   baseRotation: number;
   upperArmRotation: number;
+  middleArmRotation: number;
   lowerArmRotation: number;
   gripRotation: number;
   platformX: number;
@@ -14,6 +15,7 @@ interface RotationContextType {
   rotationValues: RotationVariables;
   setBaseRotation: (value: number) => void;
   setUpperArmRotation: (value: number) => void;
+  setMiddleArmRotation: (value: number) => void;
   setLowerArmRotation: (value: number) => void;
   setGripRotation: (value: number) => void;
   setPlatformPosition: (x: number, z: number) => void;
@@ -25,6 +27,7 @@ export const RotationProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [rotationValues, setRotationValues] = useState<RotationVariables>({
     baseRotation: 0,
     upperArmRotation: 0,
+    middleArmRotation: 0,
     lowerArmRotation: 0,
     gripRotation: 0,
     platformX: 0,
@@ -37,6 +40,10 @@ export const RotationProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const setUpperArmRotation = (value: number) => {
     setRotationValues(prev => ({ ...prev, upperArmRotation: value }));
+  };
+
+  const setMiddleArmRotation = (value: number) => {
+    setRotationValues(prev => ({ ...prev, middleArmRotation: value }));
   };
 
   const setLowerArmRotation = (value: number) => {
@@ -56,6 +63,7 @@ export const RotationProvider: React.FC<{ children: ReactNode }> = ({ children }
       rotationValues,
       setBaseRotation,
       setUpperArmRotation,
+      setMiddleArmRotation,
       setLowerArmRotation,
       setGripRotation,
       setPlatformPosition
