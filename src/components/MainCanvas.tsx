@@ -14,14 +14,14 @@ import { calculateInverseKinematics } from '../utils/inverse-kinematics';
 const MainCanvas: React.FC = () => {
     const canvasContainerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const { rotationValues, setBaseRotation, setUpperArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition } = useRotation();
+    const { rotationValues, setBaseRotation, setUpperArmRotation, setMiddleArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition, setMiddleArmCount } = useRotation();
 
     // Store objects as refs to maintain them between renders
     const canvasObjectRef = useRef<CanvasObject | null>(null);
     const platformRef = useRef<Platform>(new Platform(0x666666));
     const robotBaseRef = useRef<RobotBase>(new RobotBase(0xaaaaee));
     const upperArmRef = useRef<UpperArm>(new UpperArm(0xaaaaee));
-    const middleArmRef = useRef<MiddleArm>(new MiddleArm(0xaaaaee));
+    const middleArmsRef = useRef<MiddleArm[]>([new MiddleArm(0xaaaaee)]);
     const lowerArmRef = useRef<LowerArm>(new LowerArm(0xaaaaee));
     const gripRef = useRef<Grip>(new Grip(0xaaaaee));
     const raycastRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
@@ -126,14 +126,23 @@ const MainCanvas: React.FC = () => {
         const platform = platformRef.current;
         const robotBase = robotBaseRef.current;
         const upperArm = upperArmRef.current;
-        const middleArm = middleArmRef.current;
         const lowerArm = lowerArmRef.current;
         const grip = gripRef.current;
 
         platform.add(robotBase);
         robotBase.addChild(upperArm);
-        upperArm.addChild(middleArm);
-        middleArm.addChild(lowerArm);
+        
+        // Connect middle arms chain
+        if (middleArmsRef.current.length > 0) {
+            upperArm.addChild(middleArmsRef.current[0]);
+            for (let i = 0; i < middleArmsRef.current.length - 1; i++) {
+                middleArmsRef.current[i].addChild(middleArmsRef.current[i + 1]);
+            }
+            middleArmsRef.current[middleArmsRef.current.length - 1].addChild(lowerArm);
+        } else {
+            upperArm.addChild(lowerArm);
+        }
+        
         lowerArm.addChild(grip);
 
         canvasObjectRef.current = new CanvasObject(canvas);
@@ -159,10 +168,56 @@ const MainCanvas: React.FC = () => {
         upperArmRef.current.rotate(angle);
     }, [rotationValues.upperArmRotation]);
 
+    // Update middle arms when count changes
     useEffect(() => {
-        const angle = rotationValues.middleArmRotation * Math.PI / 180;
-        middleArmRef.current.rotate(angle);
-    }, [rotationValues.middleArmRotation]);
+        const count = rotationValues.middleArmCount;
+        const currentCount = middleArmsRef.current.length;
+        
+        if (count !== currentCount) {
+            // Remove all middle arms from scene
+            middleArmsRef.current.forEach(arm => {
+                if (arm.parent) {
+                    arm.parent.remove(arm);
+                }
+            });
+            
+            // Create new middle arms
+            const newMiddleArms: MiddleArm[] = [];
+            for (let i = 0; i < count; i++) {
+                newMiddleArms.push(new MiddleArm(0xaaaaee));
+            }
+            middleArmsRef.current = newMiddleArms;
+            
+            // Reconnect the chain
+            const upperArm = upperArmRef.current;
+            const lowerArm = lowerArmRef.current;
+            
+            // Remove lowerArm from its current parent
+            if (lowerArm.parent) {
+                lowerArm.parent.remove(lowerArm);
+            }
+            
+            if (count > 0) {
+                upperArm.addChild(middleArmsRef.current[0]);
+                for (let i = 0; i < count - 1; i++) {
+                    middleArmsRef.current[i].addChild(middleArmsRef.current[i + 1]);
+                }
+                middleArmsRef.current[count - 1].addChild(lowerArm);
+            } else {
+                upperArm.addChild(lowerArm);
+            }
+        }
+    }, [rotationValues.middleArmCount]);
+    
+    // Update middle arms rotations
+    useEffect(() => {
+        middleArmsRef.current.forEach((arm, index) => {
+            if (index < rotationValues.middleArmRotations.length) {
+                const angle = rotationValues.middleArmRotations[index] * Math.PI / 180;
+                arm.rotate(angle);
+            }
+        });
+    }, [rotationValues.middleArmRotations]);
 
     useEffect(() => {
         const angle = rotationValues.lowerArmRotation * Math.PI / 180;
