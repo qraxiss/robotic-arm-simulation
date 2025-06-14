@@ -35,7 +35,7 @@ export class CanvasObject {
 
     this.renderer.setClearColor(0x555555);
 
-    const gridHelper = new THREE.GridHelper(100, 20);
+    const gridHelper = new THREE.GridHelper(500, 50);
     this.scene.add(gridHelper);
 
     this.controls.target.set(0, 50, 0);
