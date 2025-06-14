@@ -4,6 +4,7 @@ import * as THREE from 'three';
 import { CanvasObject } from '../module-3D/canvas/canvas-object';
 import { RobotBase } from '../module-3D/segments/robot-base';
 import { UpperArm } from '../module-3D/segments/upper-arm';
+import { MiddleArm } from '../module-3D/segments/middle-arm';
 import { LowerArm } from '../module-3D/segments/lower-arm';
 import { Grip } from '../module-3D/segments/grip';
 import { Platform } from '../module-3D/segments/platform';
@@ -20,6 +21,7 @@ const MainCanvas: React.FC = () => {
     const platformRef = useRef<Platform>(new Platform(0x666666));
     const robotBaseRef = useRef<RobotBase>(new RobotBase(0xaaaaee));
     const upperArmRef = useRef<UpperArm>(new UpperArm(0xaaaaee));
+    const middleArmRef = useRef<MiddleArm>(new MiddleArm(0xaaaaee));
     const lowerArmRef = useRef<LowerArm>(new LowerArm(0xaaaaee));
     const gripRef = useRef<Grip>(new Grip(0xaaaaee));
     const raycastRef = useRef<THREE.Raycaster>(new THREE.Raycaster());
@@ -97,7 +99,7 @@ const MainCanvas: React.FC = () => {
 
             if (intersectPoint) {
                 setPlatformPosition(intersectPoint.x, intersectPoint.z);
-                
+
                 const ikResult = calculateInverseKinematics(
                     0,
                     3,
@@ -106,7 +108,7 @@ const MainCanvas: React.FC = () => {
                     25,
                     16.5
                 );
-                
+
                 if (ikResult) {
                     setBaseRotation(ikResult.baseAngle * 180 / Math.PI);
                     setUpperArmRotation(-ikResult.upperArmAngle * 180 / Math.PI);
@@ -124,12 +126,14 @@ const MainCanvas: React.FC = () => {
         const platform = platformRef.current;
         const robotBase = robotBaseRef.current;
         const upperArm = upperArmRef.current;
+        const middleArm = middleArmRef.current;
         const lowerArm = lowerArmRef.current;
         const grip = gripRef.current;
 
         platform.add(robotBase);
         robotBase.addChild(upperArm);
-        upperArm.addChild(lowerArm);
+        upperArm.addChild(middleArm);
+        middleArm.addChild(lowerArm);
         lowerArm.addChild(grip);
 
         canvasObjectRef.current = new CanvasObject(canvas);
@@ -156,6 +160,11 @@ const MainCanvas: React.FC = () => {
     }, [rotationValues.upperArmRotation]);
 
     useEffect(() => {
+        const angle = rotationValues.middleArmRotation * Math.PI / 180;
+        middleArmRef.current.rotate(angle);
+    }, [rotationValues.middleArmRotation]);
+
+    useEffect(() => {
         const angle = rotationValues.lowerArmRotation * Math.PI / 180;
         lowerArmRef.current.rotate(angle);
     }, [rotationValues.lowerArmRotation]);
@@ -170,23 +179,23 @@ const MainCanvas: React.FC = () => {
         const targetZ = rotationValues.platformZ;
         const currentX = platformRef.current.position.x;
         const currentZ = platformRef.current.position.z;
-        
+
         const animationDuration = 1000;
         const startTime = Date.now();
-        
+
         const animate = () => {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / animationDuration, 1);
             const easeProgress = 1 - Math.pow(1 - progress, 3);
-            
+
             platformRef.current.position.x = currentX + (targetX - currentX) * easeProgress;
             platformRef.current.position.z = currentZ + (targetZ - currentZ) * easeProgress;
-            
+
             if (progress < 1) {
                 requestAnimationFrame(animate);
             }
         };
-        
+
         animate();
     }, [rotationValues.platformX, rotationValues.platformZ]);
 
