@@ -180,6 +180,7 @@ const MainCanvas: React.FC = () => {
                 const platformZ = intersectPoint.z - direction.z * offsetDistance;
 
                 // Calculate base rotation to face the clicked point
+                // This needs to be relative to the platform's rotation
                 const angleToTarget = Math.atan2(intersectPoint.x - platformX, intersectPoint.z - platformZ);
 
                 // Get current arm positions
@@ -199,15 +200,19 @@ const MainCanvas: React.FC = () => {
                 };
 
                 animateArmRotations(currentValues, straightValues, 500, () => {
-                    // After arms are straight, rotate the base
+                    // After arms are straight, move the platform first
                     setTimeout(() => {
-                        const currentBaseRotation = rotationValuesRef.current.baseRotation;
-                        animateBaseRotation(currentBaseRotation, angleToTarget * 180 / Math.PI, 600, () => {
-                            // After base rotation, move the platform
-                            setPlatformPosition(platformX, platformZ);
+                        // Set platform position (this will trigger animation with platform rotation)
+                        setPlatformPosition(platformX, platformZ);
 
-                            // After platform animation completes, bend the arms
-                            setTimeout(() => {
+                        // After platform movement starts, rotate the base independently
+                        setTimeout(() => {
+                            const currentBaseRotation = rotationValuesRef.current.baseRotation;
+                            // Since platform doesn't rotate anymore, we can use the angle directly
+                            const worldAngle = angleToTarget * 180 / Math.PI;
+                            animateBaseRotation(currentBaseRotation, worldAngle, 600, () => {
+                                // After base rotation completes, bend the arms
+                                setTimeout(() => {
                         // Calculate the target position relative to the platform
                         const targetX = intersectPoint.x - platformX;
                         const targetZ = intersectPoint.z - platformZ;
@@ -284,8 +289,9 @@ const MainCanvas: React.FC = () => {
 
                         // Animate from straight to bent position
                         animateArmRotations(straightValues, targetBendValues, 800);
-                            }, 1000); // Wait for platform animation to complete
-                        });
+                                }, 200); // Small delay after base rotation
+                            });
+                        }, 300); // Start base rotation shortly after platform starts moving
                     }, 200); // Small delay after arms straighten
                 });
             }
@@ -417,13 +423,37 @@ const MainCanvas: React.FC = () => {
         const animationDuration = 1000;
         const startTime = Date.now();
 
+        // Calculate total distance for wheel rotation
+        const deltaX = targetX - currentX;
+        const deltaZ = targetZ - currentZ;
+        const totalDistance = Math.sqrt(deltaX * deltaX + deltaZ * deltaZ);
+
+        // Calculate the angle to face the movement direction
+        const targetAngle = Math.atan2(deltaX, deltaZ);
+        const currentAngle = platformRef.current.rotation.y;
+
+        // Handle angle wrapping for shortest path
+        let angleDiff = targetAngle - currentAngle;
+        if (angleDiff > Math.PI) angleDiff -= 2 * Math.PI;
+        if (angleDiff < -Math.PI) angleDiff += 2 * Math.PI;
+
         const animate = () => {
             const elapsed = Date.now() - startTime;
             const progress = Math.min(elapsed / animationDuration, 1);
             const easeProgress = 1 - Math.pow(1 - progress, 3);
 
+            // Move platform
             platformRef.current.position.x = currentX + (targetX - currentX) * easeProgress;
             platformRef.current.position.z = currentZ + (targetZ - currentZ) * easeProgress;
+
+            // Don't rotate platform - keep it fixed
+            // This prevents the platform rotation from affecting the robot base
+
+            // Rotate wheels based on distance traveled
+            const distanceTraveled = totalDistance * easeProgress;
+            if (platformRef.current.rotateWheels) {
+                platformRef.current.rotateWheels(distanceTraveled * 0.05); // Small incremental rotation
+            }
 
             if (progress < 1) {
                 requestAnimationFrame(animate);
