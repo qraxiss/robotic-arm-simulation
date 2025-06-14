@@ -15,7 +15,7 @@ const MainCanvas: React.FC = () => {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const { rotationValues, setBaseRotation, setUpperArmRotation, setAllMiddleArmRotations, setMiddleArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition } = useRotation();
     const rotationValuesRef = useRef(rotationValues);
-    
+
     // Update ref when rotationValues changes
     useEffect(() => {
         rotationValuesRef.current = rotationValues;
@@ -149,9 +149,25 @@ const MainCanvas: React.FC = () => {
                 }
 
                 // Apply the calculated angle to all joints
-                setUpperArmRotation(bendAngle);
+                // Upper arm uses specific angles based on arm count
+                let upperArmAngle;
+                if (middleArmCount === 0) {
+                    upperArmAngle = 85;
+                } else if (middleArmCount === 1) {
+                    upperArmAngle = 80;
+                } else if (middleArmCount === 2) {
+                    upperArmAngle = 75;
+                } else if (middleArmCount === 3) {
+                    upperArmAngle = 70;
+                } else if (middleArmCount === 4) {
+                    upperArmAngle = 65;
+                } else {
+                    upperArmAngle = 60;
+                }
+
+                setUpperArmRotation(bendAngle * upperArmAngle / 100);
                 setLowerArmRotation(bendAngle);
-                
+
                 // For 2+ arms, make the first middle arm bend less
                 if (middleArmCount >= 2) {
                     const middleArmRotations = [];
@@ -168,7 +184,7 @@ const MainCanvas: React.FC = () => {
                 } else {
                     setAllMiddleArmRotations(bendAngle);
                 }
-                
+
                 setGripRotation(bendAngle);
             }
         };
