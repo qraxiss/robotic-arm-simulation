@@ -3,7 +3,7 @@ import React from 'react';
 import { useRotation } from '../store/rotationStore';
 
 const RobotControls: React.FC = () => {
-    const { rotationValues, setBaseRotation, setUpperArmRotation, setMiddleArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition } = useRotation();
+    const { rotationValues, setBaseRotation, setUpperArmRotation, setMiddleArmRotation, setLowerArmRotation, setGripRotation, setPlatformPosition, setMiddleArmCount } = useRotation();
 
     return (
         <div className="control-panel">
@@ -32,17 +32,32 @@ const RobotControls: React.FC = () => {
                 />
             </div>
             <div className="control">
-                <label htmlFor="middle-arm-rotation">Middle Arm Rotation:</label>
+                <label htmlFor="middle-arm-count">Middle Arm Count:</label>
                 <input
-                    id="middle-arm-rotation"
+                    id="middle-arm-count"
                     type="range"
-                    value={rotationValues.middleArmRotation}
-                    onChange={(e) => setMiddleArmRotation(Number(e.target.value))}
-                    min="-180"
-                    max="180"
+                    value={rotationValues.middleArmCount}
+                    onChange={(e) => setMiddleArmCount(Number(e.target.value))}
+                    min="0"
+                    max="5"
                     step="1"
                 />
+                <span style={{ marginLeft: '10px' }}>{rotationValues.middleArmCount}</span>
             </div>
+            {rotationValues.middleArmRotations.map((rotation, index) => (
+                <div key={index} className="control">
+                    <label htmlFor={`middle-arm-rotation-${index}`}>Middle Arm {index + 1} Rotation:</label>
+                    <input
+                        id={`middle-arm-rotation-${index}`}
+                        type="range"
+                        value={rotation}
+                        onChange={(e) => setMiddleArmRotation(index, Number(e.target.value))}
+                        min="-180"
+                        max="180"
+                        step="1"
+                    />
+                </div>
+            ))}
             <div className="control">
                 <label htmlFor="lower-arm-rotation">Lower Arm Rotation:</label>
                 <input

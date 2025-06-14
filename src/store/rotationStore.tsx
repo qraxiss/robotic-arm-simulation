@@ -4,21 +4,23 @@ import { createContext, useContext, useState, ReactNode } from 'react';
 interface RotationVariables {
   baseRotation: number;
   upperArmRotation: number;
-  middleArmRotation: number;
+  middleArmRotations: number[];
   lowerArmRotation: number;
   gripRotation: number;
   platformX: number;
   platformZ: number;
+  middleArmCount: number;
 }
 
 interface RotationContextType {
   rotationValues: RotationVariables;
   setBaseRotation: (value: number) => void;
   setUpperArmRotation: (value: number) => void;
-  setMiddleArmRotation: (value: number) => void;
+  setMiddleArmRotation: (index: number, value: number) => void;
   setLowerArmRotation: (value: number) => void;
   setGripRotation: (value: number) => void;
   setPlatformPosition: (x: number, z: number) => void;
+  setMiddleArmCount: (count: number) => void;
 }
 
 const RotationContext = createContext<RotationContextType | undefined>(undefined);
@@ -27,11 +29,12 @@ export const RotationProvider: React.FC<{ children: ReactNode }> = ({ children }
   const [rotationValues, setRotationValues] = useState<RotationVariables>({
     baseRotation: 0,
     upperArmRotation: 0,
-    middleArmRotation: 0,
+    middleArmRotations: [0],
     lowerArmRotation: 0,
     gripRotation: 0,
     platformX: 0,
     platformZ: 0,
+    middleArmCount: 1,
   });
 
   const setBaseRotation = (value: number) => {
@@ -42,8 +45,23 @@ export const RotationProvider: React.FC<{ children: ReactNode }> = ({ children }
     setRotationValues(prev => ({ ...prev, upperArmRotation: value }));
   };
 
-  const setMiddleArmRotation = (value: number) => {
-    setRotationValues(prev => ({ ...prev, middleArmRotation: value }));
+  const setMiddleArmRotation = (index: number, value: number) => {
+    setRotationValues(prev => {
+      const newRotations = [...prev.middleArmRotations];
+      newRotations[index] = value;
+      return { ...prev, middleArmRotations: newRotations };
+    });
+  };
+
+  const setMiddleArmCount = (count: number) => {
+    setRotationValues(prev => {
+      const newRotations = new Array(count).fill(0);
+      // Preserve existing rotations where possible
+      for (let i = 0; i < Math.min(count, prev.middleArmRotations.length); i++) {
+        newRotations[i] = prev.middleArmRotations[i];
+      }
+      return { ...prev, middleArmCount: count, middleArmRotations: newRotations };
+    });
   };
 
   const setLowerArmRotation = (value: number) => {
@@ -66,7 +84,8 @@ export const RotationProvider: React.FC<{ children: ReactNode }> = ({ children }
       setMiddleArmRotation,
       setLowerArmRotation,
       setGripRotation,
-      setPlatformPosition
+      setPlatformPosition,
+      setMiddleArmCount
     }}>
       {children}
     </RotationContext.Provider>
