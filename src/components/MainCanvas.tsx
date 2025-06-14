@@ -9,7 +9,6 @@ import { LowerArm } from '../module-3D/segments/lower-arm';
 import { Grip } from '../module-3D/segments/grip';
 import { Platform } from '../module-3D/segments/platform';
 import { useRotation } from '../store/rotationStore';
-import { calculateInverseKinematics } from '../utils/inverse-kinematics';
 
 const MainCanvas: React.FC = () => {
     const canvasContainerRef = useRef<HTMLDivElement>(null);
@@ -81,22 +80,32 @@ const MainCanvas: React.FC = () => {
             raycastRef.current.ray.intersectPlane(groundPlane, intersectPoint);
 
             if (intersectPoint) {
-                setPlatformPosition(intersectPoint.x, intersectPoint.z);
+                // Calculate direction vector from origin to clicked point
+                const direction = new THREE.Vector3(intersectPoint.x, 0, intersectPoint.z);
+                direction.normalize();
+                
+                // Move platform further behind the clicked point (45 units back)
+                const offsetDistance = 45;
+                const platformX = intersectPoint.x - direction.x * offsetDistance;
+                const platformZ = intersectPoint.z - direction.z * offsetDistance;
+                setPlatformPosition(platformX, platformZ);
 
-                const ikResult = calculateInverseKinematics(
-                    0,
-                    3,
-                    0,
-                    25,
-                    25,
-                    16.5
-                );
+                // Calculate base rotation to face the clicked point
+                const angleToTarget = Math.atan2(intersectPoint.x - platformX, intersectPoint.z - platformZ);
+                setBaseRotation(angleToTarget * 180 / Math.PI);
 
-                if (ikResult) {
-                    setBaseRotation(ikResult.baseAngle * 180 / Math.PI);
-                    setUpperArmRotation(-ikResult.upperArmAngle * 180 / Math.PI);
-                    setLowerArmRotation(-ikResult.lowerArmAngle * 180 / Math.PI);
+                // Set all arm joints to 35 degrees tilt towards the target
+                const tiltAngle = 35;
+                setUpperArmRotation(tiltAngle);
+                setLowerArmRotation(tiltAngle);
+                
+                // Set middle arms to the same tilt angle
+                for (let i = 0; i < rotationValues.middleArmCount; i++) {
+                    setMiddleArmRotation(i, tiltAngle);
                 }
+                
+                // Also tilt the grip
+                setGripRotation(tiltAngle);
             }
         };
 
